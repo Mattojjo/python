@@ -16,7 +16,7 @@ Base = declarative_base()
 class Item(Base):
     __tablename__ = "items"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
+    title = Column(String, index=True)
     description = Column(String, index=True)
     date = Column(DateTime, default=func.now(), index=True)
     user_id = Column(Integer, index=True)  # Dummy field for development
@@ -51,21 +51,21 @@ def get_db():  # Dependency for database session in each request
 def create_item(item: dict, db: Session = Depends(get_db)):
     """Create a new item (dev mode - no authentication)"""
     db_item = Item(
-        name=item["name"], 
+        title=item["title"], 
         description=item.get("description", ""),
         user_id=1  # Use a dummy user ID (1) for development
     )
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
-    return {"id": db_item.id, "name": db_item.name, "description": db_item.description, "date": db_item.date}
+    return {"id": db_item.id, "title": db_item.title, "description": db_item.description, "date": db_item.date}
 
 
 @app.get("/items/", response_model=List[dict])
 def read_items(db: Session = Depends(get_db)):
     """Get all items (dev mode - no authentication)"""
     items = db.query(Item).all()  # Get all items without user filtering
-    return [{"id": i.id, "name": i.name, "description": i.description, "date": i.date} for i in items]
+    return [{"id": i.id, "title": i.title, "description": i.description, "date": i.date} for i in items]
 
 
 @app.get("/items/{item_id}", response_model=dict)
@@ -74,7 +74,7 @@ def read_item(item_id: int, db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
-    return {"id": item.id, "name": item.name, "description": item.description, "date": item.date}
+    return {"id": item.id, "title": item.title, "description": item.description, "date": item.date}
 
 
 @app.delete("/items/{item_id}", response_model=dict)
