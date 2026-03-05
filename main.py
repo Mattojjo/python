@@ -35,7 +35,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 def get_db():  # Dependency for database session in each request
     db = SessionLocal()
     try:
@@ -86,3 +85,17 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
     db.delete(item)
     db.commit()
     return {"ok": True}
+
+app.put("items/{item_id}", response_model=dict)
+def edit_item(item_id: int, updated_item: dict, db: Session = Depends(get_db)):
+    """Edit an item by ID (dev mode - no authentication)"""
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    item.title = updated_item.get("title", item.title)
+    item.description = updated_item.get("description", item.description)
+
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "title": item.title, "description": item.description, "date": item.date}
